@@ -1,8 +1,8 @@
-# 1. Küsime andmed kasutajalt
+# Read-Host käskude abil küsitakse kasutaja ees- ja perenimi ning salvestatakse need muutujatesse eesnimi ja perenimi
 $eesnimi = Read-Host "Sisesta oma eesnimi"
 $perenimi = Read-Host "Sisesta oma perenimi"
 
-# 2. Kontrollime, et nimi sisaldaks ainult ladina tähti (vastavalt ülesandele)
+# Regulaaravaldise -notmatch '^[A-Za-z]+$' abil kontrollitakse, et sisestatud tekst sisaldaks ainult ladina tähti (A-Z)
 if ($eesnimi -notmatch '^[A-Za-z]+$') {
     Write-Host "Eesnimi võib sisaldada ainult ladina tähti!" -ForegroundColor Red
     exit
@@ -13,7 +13,7 @@ if ($perenimi -notmatch '^[A-Za-z]+$') {
     exit
 }
 
-# 3. Moodustame nimed ja domeeni info
+# Stringide manipuleerimine: liidetakse nimed punktiga, muudetakse kõik tähed väikseks (.ToLower) ja luuakse sisselogimisnimi (@meremaa-kool.local)
 $kasutajanimi = ($eesnimi + "." + $perenimi).ToLower()
 $taisnimi = "$eesnimi $perenimi"
 $upn = $kasutajanimi + "@meremaa-kool.local"
@@ -21,7 +21,7 @@ $parool = ConvertTo-SecureString "Parool1!" -AsPlainText -Force
 
 Write-Host "Loodav kasutaja on $kasutajanimi" -ForegroundColor Cyan
 
-# 4. Kontrollime, kas kasutaja on AD-s juba olemas
+# Get-ADUser käsk koos -Filter parameetriga kontrollib, kas sisestatud SamAccountName on Active Directorys juba dubleeritud
 $existingUser = Get-ADUser -Filter "SamAccountName -eq '$kasutajanimi'" -ErrorAction SilentlyContinue
 
 if ($existingUser) {
@@ -29,7 +29,7 @@ if ($existingUser) {
     exit
 }
 
-# 5. LOOME KASUTAJA ACTIVE DIRECTORYSSE
+# New-ADUser cmdlet-i käivitamine try-catch plokis, mis edastab kogutud atribuudid serverile uue konto loomiseks
 try {
     New-ADUser -Name $kasutajanimi `
         -DisplayName $taisnimi `
