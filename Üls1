@@ -1,0 +1,47 @@
+# 1. Küsime andmed kasutajalt
+$eesnimi = Read-Host "Sisesta oma eesnimi"
+$perenimi = Read-Host "Sisesta oma perenimi"
+
+# 2. Kontrollime, et nimi sisaldaks ainult ladina tähti (vastavalt ülesandele)
+if ($eesnimi -notmatch '^[A-Za-z]+$') {
+    Write-Host "Eesnimi võib sisaldada ainult ladina tähti!" -ForegroundColor Red
+    exit
+}
+
+if ($perenimi -notmatch '^[A-Za-z]+$') {
+    Write-Host "Perenimi võib sisaldada ainult ladina tähti!" -ForegroundColor Red
+    exit
+}
+
+# 3. Moodustame nimed ja domeeni info
+$kasutajanimi = ($eesnimi + "." + $perenimi).ToLower()
+$taisnimi = "$eesnimi $perenimi"
+$upn = $kasutajanimi + "@meremaa-kool.local"
+$parool = ConvertTo-SecureString "Parool1!" -AsPlainText -Force
+
+Write-Host "Loodav kasutaja on $kasutajanimi" -ForegroundColor Cyan
+
+# 4. Kontrollime, kas kasutaja on AD-s juba olemas
+$existingUser = Get-ADUser -Filter "SamAccountName -eq '$kasutajanimi'" -ErrorAction SilentlyContinue
+
+if ($existingUser) {
+    Write-Host "Kasutaja $kasutajanimi on juba domeenis olemas!" -ForegroundColor Yellow
+    exit
+}
+
+# 5. LOOME KASUTAJA ACTIVE DIRECTORYSSE
+try {
+    New-ADUser -Name $kasutajanimi `
+        -DisplayName $taisnimi `
+        -GivenName $eesnimi `
+        -Surname $perenimi `
+        -SamAccountName $kasutajanimi `
+        -UserPrincipalName $upn `
+        -AccountPassword $parool `
+        -Enabled $true
+    
+    Write-Host "Kasutaja $kasutajanimi loodi edukalt domeeni meremaa-kool.local!" -ForegroundColor Green
+}
+catch {
+    Write-Host "Viga: $($_.Exception.Message)" -ForegroundColor Red
+}
