@@ -1,0 +1,12 @@
+$firstname = Read-Host "Please enter user firstname"
+$lastname = Read-Host "Please enter user lastname"
+
+$username = "$firstname $lastname"
+
+try {
+    Remove-ADUser -Identity $username -Confirm:$false -ErrorAction Stop
+    Write-Host "User $username is removed succesfully"
+}
+catch {
+    Write-Host "User not exists or problem is occuring during user removing, please try again"
+}
