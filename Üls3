@@ -1,0 +1,24 @@
+# Kasutajate nimekiri, mida soovid kontrollida/lisada
+$kasutajad = @("kadi.tamm", "terje.lepp", "tonis.kokk", "heiki.magi")
+
+foreach ($nimi in $kasutajad) {
+    # Kontrolli, kas kasutaja on juba AD-s olemas
+    $olemas = Get-ADUser -Filter "SamAccountName -eq '$nimi'" -ErrorAction SilentlyContinue
+
+    if ($olemas) {
+        # Teade, kui kasutaja on juba süsteemis
+        Write-Host "User $nimi already exists - can not add this users"
+    }
+    else {
+        # Kui kasutajat pole, ürita luua uus kasutaja
+        New-ADUser -Name $nimi -SamAccountName $nimi -ErrorAction SilentlyContinue
+        
+        # Kontrolli eelmise käsu õnnestumist ($? on True, kui vigu polnud)
+        if ($?) {
+            Write-Host "New user $nimi added succesfully"
+        }
+        else {
+            Write-Host "Viga kasutaja $nimi loomisel"
+        }
+    }
+}
