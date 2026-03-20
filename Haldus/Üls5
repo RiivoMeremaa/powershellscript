@@ -1,0 +1,40 @@
+Add-Type -AssemblyName System.Web
+
+$kasutajad = @(
+    @{eesnimi="Kadi"; perenimi="Tamm"},
+    @{eesnimi="Terje"; perenimi="Lepp"},
+    @{eesnimi="Tonis"; perenimi="Kokk"},
+    @{eesnimi="Heiki"; perenimi="Magi"}
+)
+
+$tulemused = @()
+
+foreach ($k in $kasutajad) {
+    $kasutajanimi = "$($k.eesnimi).$($k.perenimi)".ToLower()
+    
+    $parool = [System.Web.Security.Membership]::GeneratePassword(10,2)
+    
+    $secureParool = ConvertTo-SecureString $parool -AsPlainText -Force
+
+    try {
+        New-ADUser -Name "$($k.eesnimi) $($k.perenimi)" `
+                   -SamAccountName $kasutajanimi `
+                   -AccountPassword $secureParool `
+                   -Enabled $true `
+                   -ChangePasswordAtLogon $true `
+                   -ErrorAction Stop
+        
+        Write-Host "Kasutaja $kasutajanimi loodud parooliga: $parool"
+    }
+    catch {
+        Write-Host "Viga kasutaja $kasutajanimi loomisel või on ta juba olemas."
+    }
+
+    $objekt = [PSCustomObject]@{
+        Kasutajatunnus = $kasutajanimi
+        Parool = $parool
+    }
+    $tulemused += $objekt
+}
+
+$tulemused | Export-Csv -Path "kasutajanimed.csv" -NoTypeInformation -Encoding UTF8
