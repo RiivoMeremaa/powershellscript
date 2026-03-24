@@ -1,0 +1,34 @@
+# 1. Määra asukohad ja kuupäeva formaat
+$sisendCSV = "kasutajad_nimekiri.csv"
+$backupKaust = "C:\Backup"
+$kuupaev = Get-Date -Format "dd.MM.yyyy"
+
+# Loo varunduse sihtkoht, kui see puudub
+if (-not (Test-Path $backupKaust)) {
+    New-Item -Path $backupKaust -ItemType Directory
+}
+
+# Loe kasutajad failist
+$kasutajad = Import-Csv -Path $sisendCSV
+
+foreach ($k in $kasutajad) {
+    # Koosta kasutajanimi ja kodukataloogi tee
+    $kasutajanimi = "$($k.eesnimi).$($k.perenimi)".ToLower()
+    $koduKataloog = "C:\Users\$kasutajanimi"
+    $sihtfail = "$backupKaust\$kasutajanimi-$kuupaev.zip"
+
+    # Kontrolli kodukataloogi olemasolu süsteemis
+    if (Test-Path $koduKataloog) {
+        try {
+            # Loo varundus (Compress-Archive)
+            Compress-Archive -Path "$koduKataloog\*" -DestinationPath $sihtfail -Force
+            Write-Host "Kasutaja $kasutajanimi varundus loodud: $sihtfail"
+        }
+        catch {
+            Write-Host "Viga kasutaja $kasutajanimi varundamisel"
+        }
+    }
+    else {
+        Write-Host "Kasutajat $kasutajanimi või tema kodukataloogi ei leitud"
+    }
+}
