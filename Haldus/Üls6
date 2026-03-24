@@ -1,38 +1,39 @@
-# 1. Määra faili asukoht ja varunduse kaust
-$csvPath = "C:\Users\Administrator\kasutajanimed.csv"
-$backupRoot = "C:\Backup"
+# 1. Määra failiteed ja tänane kuupäev
+$csvTee = "C:\Users\Administrator\kasutajanimed.csv"
+$backupKaust = "C:\Backup"
 $kuupaev = Get-Date -Format "dd.MM.yyyy"
 
-# Loo varunduse kaust, kui seda veel pole
-if (-not (Test-Path $backupRoot)) {
-    New-Item -Path $backupRoot -ItemType Directory
+# 2. Kontrolli, kas Backup kaust on olemas - kui ei ole, siis LOO see
+if (-not (Test-Path $backupKaust)) {
+    New-Item -Path $backupKaust -ItemType Directory
+    Write-Host "Loodi uus kaust: $backupKaust" -ForegroundColor Cyan
 }
 
-# 2. Loe kasutajad CSV-st
-if (Test-Path $csvPath) {
-    $kasutajad = Import-Csv -Path $csvPath
+# 3. Loe kasutajad CSV failist
+if (Test-Path $csvTee) {
+    $kasutajad = Import-Csv -Path $csvTee
     
     foreach ($k in $kasutajad) {
-        # Võtame kasutajatunnuse otse CSV-st
-        $kasutaja = $k.Kasutajatunnus
-        $koduKataloog = "C:\Users\$kasutaja"
-        $sihtZip = "$backupRoot\$kasutaja-$kuupaev.zip"
+        $nimi = $k.Kasutajatunnus
+        $allikas = "C:\Users\$nimi"
+        $sihtfail = "$backupKaust\$nimi-$kuupaev.zip"
 
-        # 3. Kontrolli kodukataloogi ja loo ZIP
-        if (Test-Path $koduKataloog) {
+        # 4. Kontrolli, kas kasutaja kodukataloog on päriselt olemas
+        if (Test-Path $allikas) {
             try {
-                Compress-Archive -Path "$koduKataloog\*" -DestinationPath $sihtZip -Force
-                Write-Host "Kasutaja $kasutaja kodukataloog varundatud."
+                # Pakime kataloogi sisu ZIP-faili
+                Compress-Archive -Path "$allikas\*" -DestinationPath $sihtfail -Force
+                Write-Host "Varundus loodud: $sihtfail" -ForegroundColor Green
             }
             catch {
-                Write-Host "Viga kasutaja $kasutaja varundamisel."
+                Write-Host "Viga kasutaja $nimi varundamisel!" -ForegroundColor Red
             }
         }
         else {
-            Write-Host "Kasutajat $kasutaja või tema kataloogi ei leitud."
+            Write-Host "Kasutaja $nimi kodukataloogi ei leitud asukohast $allikas" -ForegroundColor Yellow
         }
     }
 }
 else {
-    Write-Host "VIGA: Faili $csvPath ei leitud!"
+    Write-Host "VIGA: Ei leitud faili $csvTee" -ForegroundColor Red
 }
