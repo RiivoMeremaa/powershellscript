@@ -1,37 +1,38 @@
-# 1. Määra õige tee ja failinimi
-$sisendCSV = "$HOME\Documents\adusers.csv"
-$backupKaust = "C:\Backup"
+# 1. Määra faili asukoht ja varunduse kaust
+$csvPath = "C:\Users\Administrator\kasutajanimed.csv"
+$backupRoot = "C:\Backup"
 $kuupaev = Get-Date -Format "dd.MM.yyyy"
 
-# Loo varunduse kaust
-if (-not (Test-Path $backupKaust)) {
-    New-Item -Path $backupKaust -ItemType Directory
+# Loo varunduse kaust, kui seda veel pole
+if (-not (Test-Path $backupRoot)) {
+    New-Item -Path $backupRoot -ItemType Directory
 }
 
-# 2. Loe CSV kasutades semikoolonit eraldajana (-Delimiter ';')
-if (Test-Path $sisendCSV) {
-    $kasutajad = Import-Csv -Path $sisendCSV -Delimiter ';'
+# 2. Loe kasutajad CSV-st
+if (Test-Path $csvPath) {
+    $kasutajad = Import-Csv -Path $csvPath
     
     foreach ($k in $kasutajad) {
-        # Kasutame tulpade nimesid: FirstName ja LastName (täpselt nagu failis)
-        $kasutajanimi = "$($k.FirstName).$($k.LastName)".ToLower()
-        $koduKataloog = "C:\Users\$kasutajanimi"
-        $sihtfail = "$backupKaust\$kasutajanimi-$kuupaev.zip"
+        # Võtame kasutajatunnuse otse CSV-st
+        $kasutaja = $k.Kasutajatunnus
+        $koduKataloog = "C:\Users\$kasutaja"
+        $sihtZip = "$backupRoot\$kasutaja-$kuupaev.zip"
 
+        # 3. Kontrolli kodukataloogi ja loo ZIP
         if (Test-Path $koduKataloog) {
             try {
-                Compress-Archive -Path "$koduKataloog\*" -DestinationPath $sihtfail -Force
-                Write-Host "Kasutaja $kasutajanimi varundus loodud: $sihtfail"
+                Compress-Archive -Path "$koduKataloog\*" -DestinationPath $sihtZip -Force
+                Write-Host "Kasutaja $kasutaja kodukataloog varundatud."
             }
             catch {
-                Write-Host "Viga kasutaja $kasutajanimi varundamisel"
+                Write-Host "Viga kasutaja $kasutaja varundamisel."
             }
         }
         else {
-            Write-Host "Kasutajat $kasutajanimi või tema kodukataloogi ($koduKataloog) ei leitud"
+            Write-Host "Kasutajat $kasutaja või tema kataloogi ei leitud."
         }
     }
 }
 else {
-    Write-Host "VIGA: Faili asukohas $sisendCSV ei leitud!"
+    Write-Host "VIGA: Faili $csvPath ei leitud!"
 }
