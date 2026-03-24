@@ -1,36 +1,37 @@
-# 1. Määra failiteed ja tänane kuupäev
+# 1. Seadistused
 $csvTee = "C:\Users\Administrator\kasutajanimed.csv"
 $backupKaust = "C:\Backup"
 $kuupaev = Get-Date -Format "dd.MM.yyyy"
 
-# 2. Kontrolli, kas Backup kaust on olemas - kui ei ole, siis LOO see
+# 2. Loo Backup kaust, kui see puudub
 if (-not (Test-Path $backupKaust)) {
     New-Item -Path $backupKaust -ItemType Directory
-    Write-Host "Loodi uus kaust: $backupKaust" -ForegroundColor Cyan
+    Write-Host "Loodi kaust: $backupKaust" -ForegroundColor Cyan
 }
 
-# 3. Loe kasutajad CSV failist
+# 3. Kontrolli CSV olemasolu ja töötle kasutajaid
 if (Test-Path $csvTee) {
     $kasutajad = Import-Csv -Path $csvTee
-    
+
     foreach ($k in $kasutajad) {
         $nimi = $k.Kasutajatunnus
         $allikas = "C:\Users\$nimi"
         $sihtfail = "$backupKaust\$nimi-$kuupaev.zip"
 
-        # 4. Kontrolli, kas kasutaja kodukataloog on päriselt olemas
-        if (Test-Path $allikas) {
-            try {
-                # Pakime kataloogi sisu ZIP-faili
-                Compress-Archive -Path "$allikas\*" -DestinationPath $sihtfail -Force
-                Write-Host "Varundus loodud: $sihtfail" -ForegroundColor Green
-            }
-            catch {
-                Write-Host "Viga kasutaja $nimi varundamisel!" -ForegroundColor Red
-            }
+        # 4. LOO KODUKATALOOG, kui seda pole (vajalik testimiseks)
+        if (-not (Test-Path $allikas)) {
+            New-Item -Path $allikas -ItemType Directory
+            New-Item -Path "$allikas\testfail.txt" -ItemType File -Value "See on testfail kasutajale $nimi"
+            Write-Host "Loodi puuduolev kodukataloog: $allikas" -ForegroundColor Magenta
         }
-        else {
-            Write-Host "Kasutaja $nimi kodukataloogi ei leitud asukohast $allikas" -ForegroundColor Yellow
+
+        # 5. VARUNDAMINE (ZIP loomine)
+        try {
+            Compress-Archive -Path "$allikas\*" -DestinationPath $sihtfail -Force
+            Write-Host "Varundus tehtud: $sihtfail" -ForegroundColor Green
+        }
+        catch {
+            Write-Host "Viga kasutaja $nimi varundamisel!" -ForegroundColor Red
         }
     }
 }
